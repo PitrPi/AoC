@@ -48,4 +48,5 @@ get_meta <- function(data) {
     return(list(data[(1+num_metad):length(data)], my_value))
 }
 out <- get_meta(inpt_c)
+out[[2]]
 
