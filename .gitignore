@@ -1,3 +1,6 @@
 *.Rproj 
 *.RDS
 .Rhistory
+*.pyc
+.idea
+*.txt
