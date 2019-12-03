@@ -17,3 +17,8 @@ def read_newest_int():
 def read_newest_int_list():
     data = read_newest()[0].split(',')
     return [int(x) for x in data]
+
+
+def read_newest_list():
+    data = read_newest()[0].split(',')
+    return data
