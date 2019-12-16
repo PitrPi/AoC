@@ -1,6 +1,6 @@
 import os
 import glob
-
+import pandas as pd
 
 def read_newest(file=None):
     if file is None:
@@ -25,3 +25,8 @@ def read_newest_int_list(file=None):
 def read_newest_list(file=None):
     data = read_newest(file)[0].split(',')
     return data
+
+
+def read_newest_dataframe(file=None):
+    data = read_newest(file)
+    return pd.DataFrame([[char for char in str(line)] for line in data])
