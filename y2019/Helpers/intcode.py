@@ -1,5 +1,3 @@
-from Helpers.helpers import read_newest_int_list
-
 
 def mode(mod, ele, data):
     if mod == '0':
@@ -20,14 +18,21 @@ def op02(a, b, c, data, idx):
     return data, idx+4
 
 
-def op03(a, data, idx):
-    data[a] = int(input("Input needed: "))
-    return data, idx+2
+def op03(a, data, idx, inpt=None, phase=None):
+    if phase is not None:
+        data[a] = phase
+        phase = None
+    elif phase is None and inpt is not None:
+        data[a] = inpt
+        inpt = None
+    else:
+        data[a] = int(input("Input needed: "))
+    return data, idx+2, inpt, phase
 
 
 def op04(a, data, idx):
-    print(a)
-    return data, idx+2
+    # print(a)
+    return data, idx+2, a
 
 
 def op05(a, b, data, idx):
@@ -58,7 +63,7 @@ def op08(a, b, c, data, idx):
     return data, idx+4
 
 
-def parse_op(data, idx, iterate):
+def parse_op(data, idx, iterate, inpt=None, phase=None, output=None):
     opcode = str(data[idx]).zfill(5)
     if opcode[3:] == '01':
         param1 = mode(opcode[2], data[idx + 1], data)
@@ -72,10 +77,10 @@ def parse_op(data, idx, iterate):
         data, idx = op02(param1, param2, param3, data, idx)
     elif opcode[3:] == '03':
         param1 = data[idx + 1]
-        data, idx = op03(param1, data, idx)
+        data, idx, inpt, phase = op03(param1, data, idx, inpt, phase)
     elif opcode[3:] == '04':
         param1 = mode(opcode[2], data[idx + 1], data)
-        data, idx = op04(param1, data, idx)
+        data, idx, output = op04(param1, data, idx)
     elif opcode[3:] == '05':
         param1 = mode(opcode[2], data[idx + 1], data)
         param2 = mode(opcode[1], data[idx + 2], data)
@@ -89,7 +94,7 @@ def parse_op(data, idx, iterate):
         param2 = mode(opcode[1], data[idx + 2], data)
         param3 = data[idx + 3]
         data, idx = op07(param1, param2, param3, data, idx)
-    elif opcode[3:] == '08':
+    elif opcode[3:] == '09':
         param1 = mode(opcode[2], data[idx + 1], data)
         param2 = mode(opcode[1], data[idx + 2], data)
         param3 = data[idx + 3]
@@ -98,15 +103,4 @@ def parse_op(data, idx, iterate):
         iterate = False
     else:
         raise ValueError('Incorect instruction')
-    return data, idx, iterate
-
-if __name__ == '__main__':
-    data = read_newest_int_list()
-    # data = [3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
-    # 1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
-    # 999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99]
-    idx = 0
-    iterate = True
-    print(data, idx)
-    while iterate:
-        data, idx, iterate = parse_op(data, idx, iterate)
+    return data, idx, iterate, inpt, phase, output

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 # Part 1
 data = read_newest_int_list()
-# data = [3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0]
+# data = [3,task_15,3,16,1002,16,10,16,1,16,task_15,task_15,4,task_15,99,0,0]
 inpts = []
 for phases in permutations(range(5), 5):
     inpt = 0

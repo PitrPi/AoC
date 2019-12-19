@@ -19,6 +19,7 @@ def op02(a, b, c, data, idx):
 
 
 def op03(a, data, idx, inpt=None, phase=None):
+    iterate = True
     if phase is not None:
         data[a] = phase
         phase = None
@@ -26,13 +27,13 @@ def op03(a, data, idx, inpt=None, phase=None):
         data[a] = inpt
         inpt = None
     else:
-        data[a] = int(input("Input needed: "))
+        data[a] = input("Insert input:")
     return data, idx+2, inpt, phase
 
 
 def op04(a, data, idx):
-    # print(a)
-    return data, idx+2, a
+    print("Output:", a)
+    return data, idx+2, a, False  # Stop iteration for now
 
 
 def op05(a, b, data, idx):
@@ -63,8 +64,9 @@ def op08(a, b, c, data, idx):
     return data, idx+4
 
 
-def parse_op(data, idx, iterate, inpt=None, phase=None, output=None):
+def parse_op2(data, idx, iterate, inpt=None, phase=None, output=None):
     opcode = str(data[idx]).zfill(5)
+    halt = False
     if opcode[3:] == '01':
         param1 = mode(opcode[2], data[idx + 1], data)
         param2 = mode(opcode[1], data[idx + 2], data)
@@ -80,7 +82,7 @@ def parse_op(data, idx, iterate, inpt=None, phase=None, output=None):
         data, idx, inpt, phase = op03(param1, data, idx, inpt, phase)
     elif opcode[3:] == '04':
         param1 = mode(opcode[2], data[idx + 1], data)
-        data, idx, output = op04(param1, data, idx)
+        data, idx, output, iterate = op04(param1, data, idx)
     elif opcode[3:] == '05':
         param1 = mode(opcode[2], data[idx + 1], data)
         param2 = mode(opcode[1], data[idx + 2], data)
@@ -94,13 +96,14 @@ def parse_op(data, idx, iterate, inpt=None, phase=None, output=None):
         param2 = mode(opcode[1], data[idx + 2], data)
         param3 = data[idx + 3]
         data, idx = op07(param1, param2, param3, data, idx)
-    elif opcode[3:] == '08':
+    elif opcode[3:] == '09':
         param1 = mode(opcode[2], data[idx + 1], data)
         param2 = mode(opcode[1], data[idx + 2], data)
         param3 = data[idx + 3]
         data, idx = op08(param1, param2, param3, data, idx)
     elif opcode[3:] == '99':
+        halt = True
         iterate = False
     else:
         raise ValueError('Incorect instruction')
-    return data, idx, iterate, inpt, phase, output
+    return data, idx, iterate, inpt, phase, output, halt
