@@ -26,8 +26,11 @@ def op03(a, data, idx, inpt=None, phase=None):
         data[a] = phase
         phase = None
     elif phase is None and inpt is not None:
-        data[a] = inpt
-        inpt = None
+        if isinstance(inpt, list):
+            data[a] = inpt.pop()
+        else:
+            data[a] = inpt
+            inpt = None
     else:
         data[a] = int(input("Insert input:"))
     return data, idx+2, inpt, phase
