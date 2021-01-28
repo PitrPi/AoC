@@ -1,5 +1,5 @@
 from Helpers.helpers import read_newest
-from collections import Counter, Set
+from collections import Counter
 
 data = read_newest()
 dat = data[0]

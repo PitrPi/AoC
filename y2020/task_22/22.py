@@ -40,7 +40,7 @@ def play_game(p1, p2, depth=0):
         if (tuple(p1.deck), tuple(p2.deck)) in visited_states:
             p1.deck += p2.deck
             p2.deck = []
-            print("depth {}, counter {}: loop".format(depth, counter))
+            # print("depth {}, counter {}: loop".format(depth, counter))
             return p1, p2
         visited_states.add((tuple(p1.deck), tuple(p2.deck)))
         card1 = p1.draw()
@@ -59,7 +59,7 @@ def play_game(p1, p2, depth=0):
             p2.add(res2)
         # print(p1.deck)
         # print(p2.deck)
-    print("depth {}, counter {}: loop".format(depth, counter))
+    # print("depth {}, counter {}: end".format(depth, counter))
     return p1, p2
 
 
