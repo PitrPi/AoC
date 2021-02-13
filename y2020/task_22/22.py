@@ -1,4 +1,3 @@
-from copy import copy
 from typing import List
 
 from Helpers.helpers import read_newest
@@ -46,7 +45,7 @@ def play_game(p1, p2, depth=0):
         card1 = p1.draw()
         card2 = p2.draw()
         if len(p1.deck) >= card1 and len(p2.deck) >= card2:
-            p1res, p2res = play_game(copy(p1), copy(p2), depth)
+            p1res, p2res = play_game(Deck(p1.deck[:card1]), Deck(p2.deck[:card2]), depth)
             if p1res.deck:
                 # print("P1 wins")
                 p1.add([card1, card2])
