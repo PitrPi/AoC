@@ -10,13 +10,18 @@ DIRECTIONS = ["top", "right", "bottom", "left"]
 DIRECTIONS_O = ["bottom", "left", "top", "right"]
 IDX_O = [[-1, 0], [0, 1], [1, 0], [0, -1]]
 DIRS = zip(DIRECTIONS, DIRECTIONS_O, IDX_O)
+MONSTER = [[0, 18], [1, 18], [1, 19],  # Head
+           [1, 0], [2, 1], [2, 4], [1, 5],
+           [1, 6], [2, 7], [2, 10], [1, 11],
+           [1, 12], [2, 13], [2, 16], [1, 17]]
 
 
 class Tile:
     def __init__(self, tile_idx, tile_data: List[str]):
         self.idx = tile_idx
         self.tile = tile_data
-        # self.rotation = 0
+        self.rotation = 0
+        self.flip = 0
 
     def read_edge(self, location="top"):
         if location == "top":
@@ -34,15 +39,19 @@ class Tile:
 
     def apply_flip(self):
         self.tile = [x[::-1] for x in self.tile]
+        self.flip += 1
+        self.flip %= 2
 
     def apply_rotation(self):
         self.tile = ["".join(x[::-1]) for x in zip(*self.tile)]
+        self.rotation += 1
+        self.rotation %= 4
 
     def print(self):
-        print("-"*(len(self.tile)+2))
+        print("+"+"-"*(len(self.tile))+"+")
         for row in self.tile:
             print('|'+row+'|')
-        print("-"*(len(self.tile)+2))
+        print("+"+"-"*(len(self.tile))+"+")
 
 
 def parse_data(data):
@@ -60,67 +69,93 @@ def parse_data(data):
 
 
 class Board:
-    def __init__(self, tiles):
+    def __init__(self, tiles, tile_zero):
+        self.final_board = []
         self.tiles = tiles
+        self.tile_zero = tile_zero
         self.dim = int(math.sqrt(len(tiles)))
-        self.target_array = [[0] * self.dim for _ in range(self.dim)]
+        self.target_array = [[tile_zero] * self.dim for _ in range(self.dim)]
         self.used_idx = []
         self.solved = False
+        self.x = 0
+        self.y = 0
 
-    def yield_tiles(self, row, col):
+    def check_valid(self, tile_idx: int):
+        tile = self.tiles[tile_idx]
+        if self.x > 0:
+            if tile.read_edge("left") != self.target_array[self.x-1][self.y].read_edge("right"):
+                return False
+        if self.y > 0:
+            if tile.read_edge("top") != self.target_array[self.x][self.y-1].read_edge("bottom"):
+                return False
+        self.used_idx.append(tile.idx)
+        self.target_array[self.x][self.y] = tile
+        self.increase_counter()
+        return True
+
+    def increase_counter(self):
+        self.x += 1
+        if self.x >= self.dim:
+            self.x = 0
+            self.y += 1
+        if self.y >= self.dim:
+            self.solved = True
+
+    def decrease_counter(self):
+        deleted_idx = self.used_idx.pop()
+        self.target_array[self.x][self.y] = self.tile_zero
+        self.x -= 1
+        if self.x < 0:
+            self.x = self.dim-1
+            self.y -= 1
+        if self.y < 0:
+            raise IndexError
+        return deleted_idx
+
+    def remove_tile(self):
+        self.decrease_counter()
+
+    def yield_tiles(self):
         for idx in self.tiles.keys():
             if idx in self.used_idx:
                 continue
             for _ in range(2):
                 for _ in range(4):
-                    self.target_array[row][col] = idx
-                    if self.check_valid():
-                        self.used_idx.append(idx)
-                        yield idx
-                    else:
-                        self.target_array[row][col] = 0
+                    yield idx
                     self.tiles[idx].apply_rotation()
                 self.tiles[idx].apply_flip()
-        return None
 
-    def solve(self, row, col):
-        for _ in self.yield_tiles(row, col):
-            ncol = col + 1
-            nrow = row
-            if ncol >= self.dim:
-                ncol = 0
-                nrow += 1
-                if nrow >= self.dim:
-                    self.solved = True
-                    return None
+    def solve(self):
+        if not self.solved:
+            for tile_idx in self.yield_tiles():
+                matching = self.check_valid(tile_idx)
+                if matching:
+                    # self.print_board()
+                    self.solve()
+                    if self.solved:
+                        return None
             if self.solved:
                 return None
-            self.solve(nrow, ncol)
-            self.used_idx.pop()
-            self.target_array[row][col] = 0
+            else:
+                self.decrease_counter()
 
-    def solve_part1(self):
-        self.solve(0, 0)
+    def print_board(self):
+        for tiles in self.target_array:
+            for line_idx, _ in enumerate(tiles[0].tile):
+                print("|".join([t.tile[line_idx][1:-1] for t in tiles]))
+            print("-"*(len(self.target_array[0][0].tile)*3-1))
+        print("-"*(len(self.target_array[0][0].tile)*3-1))
 
-    def check_valid(self):
-        dirs = zip(DIRECTIONS, DIRECTIONS_O, IDX_O)
-        for row_idx, row in enumerate(self.target_array):
-            for col_idx, col in enumerate(row):
-                if col == 0:
+    def create_board_for_monsters(self):
+        # Transpose
+        transposed_array = list(map(list, zip(*self.target_array)))
+        for tiles in transposed_array:
+            for line_idx, _ in enumerate(tiles[0].tile):
+                if line_idx == 0:
                     continue
-                for direction, odirection, oidx in dirs:
-                    orow_idx = row_idx + oidx[0]
-                    ocol_idx = col_idx + oidx[1]
-                    otile_idx = self.target_array[orow_idx][ocol_idx]
-                    if otile_idx == 0:
-                        continue
-                    otile = self.tiles[otile_idx]
-                    if (0 <= orow_idx <= self.dim
-                            and 0 <= ocol_idx <= self.dim):
-                        if (self.tiles[col].read_edge(direction)
-                                != otile.read_edge(odirection)):
-                            return False
-        return True
+                else:
+                    self.final_board.append("".join([t.tile[line_idx][1:-1] for t in tiles]))
+            self.final_board.pop()
 
 
 def use_data(idx=None):
@@ -237,18 +272,70 @@ XX#X###XXX'''.split('\n')
     return data
 
 
+def find_monsters(tile: Tile):
+    monster_count = 0
+    for line_idx in range(0, len(tile.tile)-2):
+        for row_idx in range(0, len(tile.tile)-19):
+            if is_monster(tile, line_idx, row_idx):
+                monster_count += 1
+    return monster_count
+
+
+def is_monster(tile, line_idx, row_idx):
+    for coords in MONSTER:
+        if tile.tile[coords[0]+line_idx][coords[1]+row_idx] != "#":
+            return False
+    return True
+
+
 if __name__ == '__main__':
-    data = use_data(2)
+    data = use_data(1)
     parsed_data = parse_data(data)
     tiles = {}
     for idx, tile in parsed_data.items():
         tiles[idx] = Tile(idx, tile)
-    board = Board(tiles)
-    board.check_valid()
-    board.solve_part1()
-    board.check_valid()
-    print(board.target_array[0][0]
-          * board.target_array[-1][0]
-          * board.target_array[0][-1]
-          * board.target_array[-1][-1])
-    tiles[board.target_array[1][0]].print()
+    tile_zero = Tile(0, ["X"*len(tile)]*len(tile))
+    board = Board(tiles, tile_zero)
+    board.solve()
+    board.print_board()
+    print(board.target_array[0][0].idx
+          * board.target_array[-1][0].idx
+          * board.target_array[0][-1].idx
+          * board.target_array[-1][-1].idx)
+    board.create_board_for_monsters()
+    final_board = Tile(0, board.final_board)
+    final_board.print()
+    monster_counts = []
+    for _ in range(2):
+        for _ in range(4):
+            mc = find_monsters(final_board)
+            monster_counts.append(mc)
+            final_board.apply_rotation()
+        final_board.apply_flip()
+    print(2020-(max(monster_counts)*len(MONSTER)))
+
+
+    fb = """.#.#..#.##...#.##..#####
+    ###....#.#....#..#......
+    ##.##.###.#.#..######...
+    ###.#####...#.#####.#..#
+    ##.#....#.##.####...#.##
+    ...########.#....#####.#
+    ....#..#...##..#.#.###..
+    .####...#..#.....#......
+    #..#.##..#..###.#.##....
+    #.####..#.####.#.#.###..
+    ###.#.#...#.######.#..##
+    #.####....##..########.#
+    ##..##.#...#...#.#.#.#..
+    ...#..#..#.#.##..###.###
+    .#.#....#.##.#...###.##.
+    ###.#...#..#.##.######..
+    .#.#.###.##.##.#..#.##..
+    .####.###.#...###.#..#.#
+    ..#.#..#..#.#.#.####.###
+    #..####...#.#.#.###.###.
+    #####..#####...###....##
+    #.##..#..#...#..####...#
+    .#.###..##..##..####.##.
+    ...###...##...#...#..###""".split("\n")
